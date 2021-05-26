@@ -68,7 +68,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-import static com.alibaba.spring.util.AnnotatedBeanDefinitionRegistryUtils.registerBeans;
+import static com.alibaba.spring.util.BeanRegistrar.registerInfrastructureBean;
 import static com.alibaba.spring.util.ObjectUtils.of;
 import static java.util.Arrays.asList;
 import static org.apache.dubbo.config.spring.beans.factory.annotation.ServiceBeanNameBuilder.create;
@@ -81,7 +81,7 @@ import static org.springframework.util.ClassUtils.resolveClassName;
 
 /**
  * {@link BeanFactoryPostProcessor} used for processing of {@link Service @Service} annotated classes. it's also the
- * infrastructure class of XML {@link BeanDefinitionParser} on &lt;dubbbo:annotation /&gt;
+ * infrastructure class of XML {@link BeanDefinitionParser} on &lt;dubbo:annotation /&gt;
  *
  * @see AnnotationBeanDefinitionParser
  * @see BeanDefinitionRegistryPostProcessor
@@ -126,7 +126,7 @@ public class ServiceClassPostProcessor implements BeanDefinitionRegistryPostProc
     public void postProcessBeanDefinitionRegistry(BeanDefinitionRegistry registry) throws BeansException {
 
         // @since 2.7.5
-        registerBeans(registry, DubboBootstrapApplicationListener.class);
+        registerInfrastructureBean(registry, DubboBootstrapApplicationListener.BEAN_NAME, DubboBootstrapApplicationListener.class);
 
         Set<String> resolvedPackagesToScan = resolvePackagesToScan(packagesToScan);
 
@@ -239,7 +239,7 @@ public class ServiceClassPostProcessor implements BeanDefinitionRegistryPostProc
      * {@link Service} Annotation.
      *
      * @param scanner       {@link ClassPathBeanDefinitionScanner}
-     * @param packageToScan pachage to scan
+     * @param packageToScan package to scan
      * @param registry      {@link BeanDefinitionRegistry}
      * @return non-null
      * @since 2.5.8
@@ -297,6 +297,9 @@ public class ServiceClassPostProcessor implements BeanDefinitionRegistryPostProc
 
         if (scanner.checkCandidate(beanName, serviceBeanDefinition)) { // check duplicated candidate bean
             registry.registerBeanDefinition(beanName, serviceBeanDefinition);
+            if (!serviceBeanDefinition.getPropertyValues().contains("id")) {
+                serviceBeanDefinition.getPropertyValues().addPropertyValue("id", beanName);
+            }
 
             if (logger.isInfoEnabled()) {
                 logger.info("The BeanDefinition[" + serviceBeanDefinition +
